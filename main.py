@@ -17,8 +17,12 @@ bgfn = 'bg.png'
 if len(sys.argv) > 2:
     bgfn = sys.argv[2]
 
-corners = [[259, 117], [720, 98], \
-        [725, 567], [268, 567]]  # clockwise from top left
+#corners = [[259, 117], [720, 98], \
+#        [725, 567], [268, 567]]  # clockwise from top left
+corners = [[300, 65], [760, 73], \
+        [732, 528], [291, 505]]
+
+start_frame = 160
 
 corners = np.array(corners)
 mazebb = np.array([[np.min(corners[:, 0]), np.min(corners[:, 1])], \
@@ -31,11 +35,11 @@ width = int(np.round(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_WIDTH)))
 height = int(np.round(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_HEIGHT)))
 size = (int(width), int(height))
 logging.debug("Frame size: %i %i" % size)
-cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_POS_AVI_RATIO, 1.0)
-nframes = int(np.round(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_POS_FRAMES)))
-cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_POS_AVI_RATIO, 0.0)
+#cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_POS_AVI_RATIO, 1.0)
+#nframes = int(np.round(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_POS_FRAMES)))
+#cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_POS_AVI_RATIO, 0.0)
 # doesn't seem to work:
-# nframes = int(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_COUNT))
+nframes = int(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_COUNT))
 logging.debug("NFrames: %i" % nframes)
 
 # make scratch images
@@ -82,10 +86,11 @@ outfile = open('locs.csv', 'w')
 frameNumber = 0
 im = None
 for frameNumber in xrange(nframes):
-#for i in xrange(100):
     im = cv.QueryFrame(cap)
     if im is None:
         break
+    if frameNumber < start_frame:
+        continue
     if (frameNumber % 100) == 0:
         logging.debug("Frame %i" % frameNumber)
     cv.CvtColor(im, gim, cv.CV_RGB2GRAY)
@@ -96,12 +101,12 @@ for frameNumber in xrange(nframes):
     cv.Threshold(fim, bim, 100., 255, cv.CV_THRESH_BINARY)
     cv.Erode(bim, bim, iterations=1)
     cbim = bim[mazeybb[0]:mazeybb[1], mazexbb[0]:mazexbb[1]]
-    #pts = cv.FindContours(cbim, cv.CreateMemStorage(), \
-    #        cv.CV_RETR_LIST, cv.CV_LINK_RUNS)
     #area = cv.ContourArea(pts)
     rect = cv.BoundingRect(cbim)
     if False:  # len(pts) >= 6:
         logging.debug("Ellipse")
+        pts = cv.FindContours(cbim, cv.CreateMemStorage(), \
+                cv.CV_RETR_LIST, cv.CV_LINK_RUNS)
         m = cv.CreateMat(1, len(pts), cv.CV_32FC2)
         for (i, (x, y)) in enumerate(pts):
             m[0, i] = (x, y)
